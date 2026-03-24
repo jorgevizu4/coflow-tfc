@@ -23,7 +23,7 @@ Gestor de proyectos colaborativo multi-tenant desarrollado como TFG.
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/<tu-usuario>/coflow-tfc.git
+git clone https://github.com/jorgevizu4/coflow-tfc.git
 cd coflow-tfc
 ```
 
