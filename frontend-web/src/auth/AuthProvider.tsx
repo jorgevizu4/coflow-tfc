@@ -32,7 +32,7 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export default function AuthProvider({ children }: AuthProviderProps) {
-    const [isAuthenticated, setIsAuthenticated] = useState(true); // Cambiado a true para pruebas, volver a false en producción
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [user, setUser] = useState<LoginResponse | null>(null);
     const [token, setToken] = useState<string | null>(null);
 
