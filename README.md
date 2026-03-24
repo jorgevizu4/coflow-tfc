@@ -24,11 +24,10 @@ Gestor de proyectos colaborativo multi-tenant desarrollado como TFG.
 
 Si tienes **Docker** y **Docker Compose** instalados, puedes levantar todo el entorno (Base de Datos + Backend + Frontend) con un solo comando:
 
-1. **Clonar y cambiar a la rama de desarrollo:**
+1. **Clonar:**
    ```bash
    git clone https://github.com/jorgevizu4/coflow-tfc.git
    cd coflow-tfc
-   git checkout devmmc
    ```
 
 2. **Levantar los servicios:**
