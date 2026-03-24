@@ -1,0 +1,18 @@
+.auth-page {
+	min-height: 100vh;
+	padding: 2rem;
+}
+
+.auth-card {
+	width: min(100%, 460px);
+}
+
+@media (max-width: 576px) {
+	.auth-page {
+		padding: 0.75rem;
+	}
+
+	.auth-card {
+		padding: 1rem !important;
+	}
+}

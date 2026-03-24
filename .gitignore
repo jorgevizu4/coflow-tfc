@@ -137,3 +137,48 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Java / Maven
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.hprof
+hs_err_pid*
+replay_pid*
+target/
+backend/target/
+
+# Spring Boot / app runtime files
+backend/uploads/
+backend/src/main/resources/application-local.yml
+backend/src/main/resources/application-local.yaml
+backend/src/main/resources/application-local.properties
+
+# Frontend build cache/output
+frontend-web/node_modules/
+frontend-web/dist/
+frontend-web/.vite/
+
+# Package manager caches
+.pnpm-store/
+
+# IDEs / editors
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# VS Code workspace-local files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+Desktop.ini
