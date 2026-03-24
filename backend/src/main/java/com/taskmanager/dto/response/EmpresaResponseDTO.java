@@ -10,14 +10,12 @@ import java.time.LocalDateTime;
 public record EmpresaResponseDTO(
         Long id,
         String nombre,
-        String dominio,
         LocalDateTime fechaCreacion
 ) {
     public static EmpresaResponseDTO fromEntity(Empresa empresa) {
         return new EmpresaResponseDTO(
                 empresa.getId(),
                 empresa.getNombre(),
-                empresa.getDominio(),
                 empresa.getFechaCreacion()
         );
     }

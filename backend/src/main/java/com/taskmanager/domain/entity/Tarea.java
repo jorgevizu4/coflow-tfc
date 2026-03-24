@@ -66,14 +66,12 @@ public class Tarea extends BaseEntity {
 
     // Control de flujo y estados
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(nullable = false, columnDefinition = "estado_tarea_enum")
+    @Column(nullable = false, length = 30)
     @Builder.Default
     private EstadoTarea estado = EstadoTarea.PENDIENTE;
 
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(nullable = false, columnDefinition = "prioridad_enum")
+    @Column(nullable = false, length = 20)
     @Builder.Default
     private Prioridad prioridad = Prioridad.MEDIA;
 

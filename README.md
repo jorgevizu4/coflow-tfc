@@ -20,46 +20,54 @@ Gestor de proyectos colaborativo multi-tenant desarrollado como TFG.
 
 ## Inicio rápido
 
-### 1. Clonar el repositorio
+### Con Docker (Recomendado)
 
-```bash
-git clone https://github.com/jorgevizu4/coflow-tfc.git
-cd coflow-tfc
-```
+Si tienes **Docker** y **Docker Compose** instalados, puedes levantar todo el entorno (Base de Datos + Backend + Frontend) con un solo comando:
 
-### 2. Preparar la base de datos
+1. **Clonar:**
+   ```bash
+   git clone https://github.com/jorgevizu4/coflow-tfc.git
+   cd coflow-tfc
+   ```
 
+2. **Levantar los servicios:**
+   ```bash
+   docker-compose up -d --build
+   ```
+
+*   **Frontend:** [http://localhost:5173](http://localhost:5173)
+*   **Backend API:** [http://localhost:8080/api/v1](http://localhost:8080/api/v1)
+*   **Base de Datos:** `localhost:5433` (externo) / `db:5432` (interno)
+
+---
+
+### Instalación Manual (Desarrollo)
+
+Si prefieres ejecutar los servicios de forma nativa en tu máquina:
+
+#### 1. Preparar la base de datos
 Conéctate a PostgreSQL como superusuario y ejecuta:
-
 ```sql
 CREATE USER taskmanager WITH PASSWORD 'taskmanager123';
 CREATE DATABASE taskmanager OWNER taskmanager;
 ```
+> El backend espera PostgreSQL en el **puerto 5433**.
 
-> El backend espera PostgreSQL en el **puerto 5433**. Si tu instalación usa el puerto por defecto (5432), cambia el puerto en `backend/src/main/resources/application.yml`.
-
-### 3. Arrancar el backend
-
+#### 2. Arrancar el backend
 ```bash
 cd backend
 mvn spring-boot:run
 ```
+La API queda disponible en [http://localhost:8080/api/v1](http://localhost:8080/api/v1).
 
-La API queda disponible en http://localhost:8080/api/v1.
-
-> La primera vez que arranque, Hibernate creará las tablas automáticamente (`ddl-auto: update`).
-
-### 4. Arrancar el frontend
-
+#### 3. Arrancar el frontend
 Abre **una terminal nueva** y ejecuta:
-
 ```bash
 cd frontend-web
 npm install
 npm run dev
 ```
-
-La aplicación queda disponible en http://localhost:5173.
+La aplicación queda disponible en [http://localhost:5173](http://localhost:5173).
 
 ---
 

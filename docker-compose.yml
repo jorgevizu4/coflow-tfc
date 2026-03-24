@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: coflow-db-v2
+    environment:
+      POSTGRES_USER: coflow_user
+      POSTGRES_PASSWORD: coflow_pass
+      POSTGRES_DB: coflow_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - coflow_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coflow_user -d coflow_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: coflow-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: production
+      DATABASE_URL: jdbc:postgresql://db:5432/coflow_db
+      DATABASE_USERNAME: coflow_user
+      DATABASE_PASSWORD: coflow_pass
+      JWT_SECRET: MiClaveSecretaMuyLargaParaJWTQueDebeSerAlMenos256BitsParaHS256AlgorithmSeguro2024
+      CORS_ALLOWED_ORIGINS: http://localhost,http://localhost:5173
+      MAIL_HOST: localhost
+      MAIL_PORT: 1025
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    build: ./frontend-web
+    container_name: coflow-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  coflow_postgres_data:

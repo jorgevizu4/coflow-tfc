@@ -42,8 +42,7 @@ public class Usuario {
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "rol_usuario_enum")
-    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(nullable = false, length = 20)
     @Builder.Default
     private RolUsuario rol = RolUsuario.USER;
 
