@@ -1,8 +1,11 @@
 package com.example.backend_v2.controller;
 
-import com.example.backend_v2.model.entity.Proyecto;
+import com.example.backend_v2.dto.ApiResponse;
+import com.example.backend_v2.dto.ProyectoCrearRequest;
+import com.example.backend_v2.dto.ProyectoDTO;
 import com.example.backend_v2.service.ProyectoService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,25 +19,29 @@ public class ProyectoController {
     private final ProyectoService proyectoService;
 
     @GetMapping
-    public List<Proyecto> findAll() {
-        return proyectoService.findAll();
+    public ResponseEntity<ApiResponse<List<ProyectoDTO>>> findAll() {
+        return ResponseEntity.ok(new ApiResponse<>(true, "OK", proyectoService.findAll()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Proyecto> findById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<ProyectoDTO>> findById(@PathVariable Long id) {
         return proyectoService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .map(p -> ResponseEntity.ok(new ApiResponse<>(true, "OK", p)))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(false, "Proyecto no encontrado", null)));
     }
 
     @PostMapping
-    public Proyecto save(@RequestBody Proyecto proyecto) {
-        return proyectoService.save(proyecto);
+    public ResponseEntity<ApiResponse<ProyectoDTO>> crear(@RequestBody ProyectoCrearRequest req) {
+        ProyectoDTO created = proyectoService.crear(req);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(true, "Proyecto creado", created));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteById(@PathVariable Long id) {
         proyectoService.deleteById(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new ApiResponse<>(true, "Proyecto eliminado", null));
     }
 }
+

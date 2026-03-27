@@ -3,9 +3,7 @@ package com.taskmanager.domain.entity;
 import com.taskmanager.domain.enums.RolUsuario;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.JdbcType;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
@@ -42,8 +40,7 @@ public class Usuario {
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "rol_usuario_enum")
-    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(nullable = false, length = 20)
     @Builder.Default
     private RolUsuario rol = RolUsuario.USER;
 

@@ -1,8 +1,8 @@
 package com.example.backend_v2.model.enums;
 
-public enum TipoEtiqueta {
-    LEVE,
+public enum Prioridad {
+    BAJA,
     MEDIA,
-    URGENTE,
-    CRITICA
+    ALTA,
+    URGENTE
 }
