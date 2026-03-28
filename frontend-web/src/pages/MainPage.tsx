@@ -151,7 +151,7 @@ function ComentariosOffcanvas({ tarea, onClose }: { tarea: Tarea | null; onClose
                         disabled={sending}
                     />
                     <button type="submit" className="btn btn-primary btn-sm" disabled={sending || !texto.trim()}>
-                        {sending ? <span className="spinner-border spinner-border-sm" /> : <i className="bi bi-send" />}
+                        {sending ? <span className="spinner-border spinner-border-sm" /> : "Enviar"} <i className="bi bi-send" />
                     </button>
                 </form>
             </div>

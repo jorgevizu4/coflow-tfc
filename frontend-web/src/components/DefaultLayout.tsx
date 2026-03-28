@@ -18,8 +18,8 @@ export default function DefaultLayout({ children }: DefaultLayoutProps) {
     return (
         <div className="d-flex flex-column min-vh-100">
             <header>
-                <nav className="navbar navbar-expand-lg navbar-dark shadow-sm" style={{ background: "var(--deep-space-blue)" }}>
-                    <div className="container">
+                <nav className="navbar navbar-expand-lg  navbar-dark shadow-sm" style={{ background: "var(--deep-space-blue)" }}>
+                    <div className="container-fluid">
                         <span className="navbar-brand fw-bold fs-4">
                             <i className="bi bi-diagram-3-fill me-2"></i>CoFlow
                         </span>
