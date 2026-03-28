@@ -96,6 +96,12 @@ public class TareaService {
         tarea.setCreatedAt(ahora);
         tarea.setUpdatedAt(ahora);
 
+        if (req.getUsuarioAsignadoId() != null) {
+            Usuario asignado = usuarioRepository.findById(req.getUsuarioAsignadoId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+            tarea.setUsuarioAsignado(asignado);
+            tarea.setEstadoTarea(EstadoTarea.ASIGNADA);
+        }
         return TareaDTO.from(tareaRepository.save(tarea));
     }
 

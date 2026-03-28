@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -20,31 +21,39 @@ public class DataInitializer implements CommandLineRunner {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
 
+    record EmpresaSeed(String nombre, String adminNombre, String adminApellidos, String adminEmail, String adminPassword) {}
+
     @Override
     public void run(String... args) {
-        if (usuarioRepository.findByEmail("admin@coflow.com") != null) {
-            return; // Ya existe, no duplicar
+        if (empresaRepository.count() > 0) {
+            return; // Ya existen datos, no duplicar
         }
 
-        Empresa empresa = new Empresa();
-        empresa.setNombre("CoFlow Demo");
-        empresa.setFechaCreacion(LocalDate.now());
-        empresa = empresaRepository.save(empresa);
+        List<EmpresaSeed> seeds = List.of(
+            new EmpresaSeed("TechNova Solutions",   "Carlos",  "García López",   "admin@technova.com",  "Admin1234"),
+            new EmpresaSeed("Creativa Studio",      "Laura",   "Martínez Ruiz",  "admin@creativa.com",  "Admin1234"),
+            new EmpresaSeed("DataBridge Corp",      "Marcos",  "Fernández Gil",  "admin@databridge.com","Admin1234")
+        );
 
-        Usuario usuario = new Usuario();
-        usuario.setNombre("Admin");
-        usuario.setApellidos("CoFlow");
-        usuario.setEmail("admin@coflow.com");
-        usuario.setPassword(passwordEncoder.encode("Admin1234"));
-        usuario.setRol(RolUsuario.ADMIN);
-        usuario.setFechaCreacion(LocalDate.now());
-        usuario.setEmpresa(empresa);
-        usuarioRepository.save(usuario);
+        for (EmpresaSeed seed : seeds) {
+            Empresa empresa = new Empresa();
+            empresa.setNombre(seed.nombre());
+            empresa.setFechaCreacion(LocalDate.now());
+            empresa = empresaRepository.save(empresa);
 
-        System.out.println("=== Usuario de ejemplo creado ===");
-        System.out.println("Email:    admin@coflow.com");
-        System.out.println("Password: Admin1234");
-        System.out.println("Empresa:  CoFlow Demo");
-        System.out.println("Rol:      ADMIN");
+            Usuario admin = new Usuario();
+            admin.setNombre(seed.adminNombre());
+            admin.setApellidos(seed.adminApellidos());
+            admin.setEmail(seed.adminEmail());
+            admin.setPassword(passwordEncoder.encode(seed.adminPassword()));
+            admin.setRol(RolUsuario.ADMIN);
+            admin.setFechaCreacion(LocalDate.now());
+            admin.setEmpresa(empresa);
+            usuarioRepository.save(admin);
+
+            System.out.println("=== Empresa creada: " + seed.nombre() + " ===");
+            System.out.println("  Admin email:    " + seed.adminEmail());
+            System.out.println("  Admin password: " + seed.adminPassword());
+        }
     }
 }

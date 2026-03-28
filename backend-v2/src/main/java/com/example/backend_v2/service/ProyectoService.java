@@ -2,6 +2,7 @@ package com.example.backend_v2.service;
 
 import com.example.backend_v2.dto.ProyectoCrearRequest;
 import com.example.backend_v2.dto.ProyectoDTO;
+import com.example.backend_v2.dto.UsuarioResumidoDTO;
 import com.example.backend_v2.model.entity.Empresa;
 import com.example.backend_v2.model.entity.Proyecto;
 import com.example.backend_v2.model.entity.Usuario;
@@ -29,6 +30,19 @@ public class ProyectoService {
     public List<ProyectoDTO> findAll() {
         return proyectoRepository.findByEmpresaId(authService.getEmpresaIdActual())
                 .stream().map(ProyectoDTO::from).collect(Collectors.toList());
+    }
+
+    public List<UsuarioResumidoDTO> getMiembros(Long proyectoId) {
+        Long empresaId = authService.getEmpresaIdActual();
+        Proyecto proyecto = proyectoRepository.findById(proyectoId)
+                .filter(p -> p.getEmpresa() != null && p.getEmpresa().getId().equals(empresaId))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Proyecto no encontrado"));
+
+        List<Usuario> miembros = (proyecto.getUsuarios() != null && !proyecto.getUsuarios().isEmpty())
+                ? proyecto.getUsuarios()
+                : usuarioRepository.findByEmpresaId(empresaId);
+
+        return miembros.stream().map(UsuarioResumidoDTO::from).collect(Collectors.toList());
     }
 
     public Optional<ProyectoDTO> findById(Long id) {

@@ -9,10 +9,11 @@ interface AuthContextType {
     token: string | null;
     login: (email: string, password: string) => Promise<void>;
     signup: (
-        nombreEmpresa: string,
-        nombreAdministrador: string,
-        emailAdministrador: string,
-        passwordAdministrador: string,
+        empresaId: number,
+        nombre: string,
+        apellidos: string,
+        email: string,
+        password: string,
         passwordRepeat: string
     ) => Promise<void>;
     logout: () => void;
@@ -27,7 +28,7 @@ const AuthContext = createContext<AuthContextType>({
     user: null,
     token: null,
     login: async () => {},
-    signup: async (_ne: string, _na: string, _ea: string, _pa: string, _pr: string) => {},
+    signup: async (_eid: number, _n: string, _a: string, _e: string, _p: string, _pr: string) => {},
     logout: () => {},
 });
 
@@ -62,21 +63,23 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     };
 
     const signup = async (
-        nombreEmpresa: string,
-        nombreAdministrador: string,
-        emailAdministrador: string,
-        passwordAdministrador: string,
+        empresaId: number,
+        nombre: string,
+        apellidos: string,
+        email: string,
+        password: string,
         passwordRepeat: string
     ) => {
-        if (passwordAdministrador !== passwordRepeat) {
+        if (password !== passwordRepeat) {
             throw new Error("Las contraseñas no coinciden");
         }
         try {
             const response = await authService.signup(
-                nombreEmpresa,
-                nombreAdministrador,
-                emailAdministrador,
-                passwordAdministrador,
+                empresaId,
+                nombre,
+                apellidos,
+                email,
+                password,
                 passwordRepeat
             );
             authService.saveToken(response.token);

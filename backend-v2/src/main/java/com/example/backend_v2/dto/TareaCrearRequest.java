@@ -16,4 +16,5 @@ public class TareaCrearRequest {
     private String fechaLimite;
     private Prioridad prioridad;
     private Boolean requiereRevision;
+    private Long usuarioAsignadoId;
 }

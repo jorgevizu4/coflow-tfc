@@ -5,6 +5,15 @@ interface RequestOptions extends RequestInit {
     headers?: Record<string, string>;
 }
 
+function isTokenExpired(token: string): boolean {
+    try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        return Date.now() / 1000 > payload.exp;
+    } catch {
+        return true;
+    }
+}
+
 export const apiClient = {
     async request<T>(
         endpoint: string,
@@ -18,6 +27,11 @@ export const apiClient = {
         };
 
         if (token) {
+            if (isTokenExpired(token)) {
+                authService.clearToken();
+                window.location.href = "/login";
+                throw new Error("Sesión expirada. Por favor, inicia sesión nuevamente.");
+            }
             headers["Authorization"] = `Bearer ${token}`;
         }
 
@@ -26,8 +40,8 @@ export const apiClient = {
             headers,
         });
 
-        // Si recibe 401, el token expiró
-        if (response.status === 401) {
+        // Si recibe 401 o 403, el token expiró o es inválido
+        if (response.status === 401 || response.status === 403) {
             authService.clearToken();
             window.location.href = "/login";
             throw new Error("Sesión expirada. Por favor, inicia sesión nuevamente.");

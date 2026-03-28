@@ -90,6 +90,7 @@ export interface TareaCreateRequest {
     fechaLimite?: string;
     prioridad?: Prioridad;
     requiereRevision?: boolean;
+    usuarioAsignadoId?: number;
 }
 
 export interface AsignacionRequest {
@@ -111,4 +112,18 @@ export interface MoverEstadoRequest {
 export interface DecisionRevisionRequest {
     aprobado: boolean;
     comentario?: string;
+}
+
+// ============ Comentario ============
+export interface Comentario {
+    id: number;
+    contenido: string;
+    fechaCreacion: string;
+    autorId: number;
+    autorNombre: string;
+}
+
+export interface ComentarioCrearRequest {
+    tareaId: number;
+    contenido: string;
 }

@@ -4,6 +4,7 @@ import com.example.backend_v2.dto.ApiResponse;
 import com.example.backend_v2.dto.AuthRequest;
 import com.example.backend_v2.dto.AuthResponse;
 import com.example.backend_v2.dto.RegisterCompanyRequest;
+import com.example.backend_v2.dto.RegisterRequest;
 import com.example.backend_v2.model.entity.Empresa;
 import com.example.backend_v2.model.entity.Usuario;
 import com.example.backend_v2.model.enums.RolUsuario;
@@ -15,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,9 +40,18 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@RequestBody AuthRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                    ApiResponse.<AuthResponse>builder()
+                            .success(false)
+                            .message("Credenciales incorrectas")
+                            .build()
+            );
+        }
         Usuario usuario = (Usuario) userDetailsService.loadUserByUsername(request.getEmail());
         String token = jwtService.generateToken(usuario);
         return ResponseEntity.ok(ApiResponse.<AuthResponse>builder()
@@ -70,6 +81,38 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.<AuthResponse>builder()
                 .success(true)
                 .message("Empresa registrada correctamente")
+                .data(buildAuthResponse(token, usuario))
+                .build());
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<AuthResponse>> register(@RequestBody RegisterRequest request) {
+        if (usuarioRepository.findByEmail(request.getEmail()).isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                    ApiResponse.<AuthResponse>builder()
+                            .success(false).message("El email ya está registrado").build());
+        }
+        Empresa empresa = empresaRepository.findById(request.getEmpresaId())
+                .orElse(null);
+        if (empresa == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    ApiResponse.<AuthResponse>builder()
+                            .success(false).message("Empresa no encontrada").build());
+        }
+        Usuario usuario = new Usuario();
+        usuario.setNombre(request.getNombre());
+        usuario.setApellidos(request.getApellidos());
+        usuario.setEmail(request.getEmail());
+        usuario.setPassword(passwordEncoder.encode(request.getPassword()));
+        usuario.setRol(RolUsuario.USUARIO);
+        usuario.setFechaCreacion(LocalDate.now());
+        usuario.setEmpresa(empresa);
+        usuarioRepository.save(usuario);
+
+        String token = jwtService.generateToken(usuario);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.<AuthResponse>builder()
+                .success(true)
+                .message("Usuario registrado correctamente")
                 .data(buildAuthResponse(token, usuario))
                 .build());
     }

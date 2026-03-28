@@ -3,6 +3,7 @@ package com.example.backend_v2.controller;
 import com.example.backend_v2.dto.ApiResponse;
 import com.example.backend_v2.dto.ProyectoCrearRequest;
 import com.example.backend_v2.dto.ProyectoDTO;
+import com.example.backend_v2.dto.UsuarioResumidoDTO;
 import com.example.backend_v2.service.ProyectoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -36,6 +37,11 @@ public class ProyectoController {
         ProyectoDTO created = proyectoService.crear(req);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ApiResponse<>(true, "Proyecto creado", created));
+    }
+
+    @GetMapping("/{id}/miembros")
+    public ResponseEntity<ApiResponse<List<UsuarioResumidoDTO>>> getMiembros(@PathVariable Long id) {
+        return ResponseEntity.ok(new ApiResponse<>(true, "OK", proyectoService.getMiembros(id)));
     }
 
     @DeleteMapping("/{id}")

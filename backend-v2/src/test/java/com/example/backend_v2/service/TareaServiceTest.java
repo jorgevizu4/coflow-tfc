@@ -178,7 +178,7 @@ class TareaServiceTest {
     @Test
     void crear_conProyectoValido_creaYDevuelveTarea() {
         TareaCrearRequest req = new TareaCrearRequest(100L, "Nueva tarea", "Desc",
-                5, "2026-06-01", Prioridad.ALTA, false);
+                5, "2026-06-01", Prioridad.ALTA, false, null);
 
         when(proyectoRepository.findById(100L)).thenReturn(Optional.of(proyecto));
         when(tareaRepository.save(any(Tarea.class))).thenAnswer(inv -> {
@@ -201,7 +201,7 @@ class TareaServiceTest {
         proyecto.setEmpresa(otraEmpresa);
 
         TareaCrearRequest req = new TareaCrearRequest(100L, "T", "D",
-                1, null, Prioridad.BAJA, false);
+                1, null, Prioridad.BAJA, false, null);
 
         when(proyectoRepository.findById(100L)).thenReturn(Optional.of(proyecto));
 
@@ -211,7 +211,7 @@ class TareaServiceTest {
     @Test
     void crear_conProyectoNoExistente_lanza404() {
         TareaCrearRequest req = new TareaCrearRequest(999L, "T", "D",
-                1, null, Prioridad.BAJA, false);
+                1, null, Prioridad.BAJA, false, null);
 
         when(proyectoRepository.findById(999L)).thenReturn(Optional.empty());
 
