@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import DefaultLayout from "../components/DefaultLayout";
 import { useAuth } from "../auth/AuthProvider";
 import { tareaService } from "../services/tareaService";
 import { proyectoService } from "../services/proyectoService";
+import { comentarioService } from "../services/comentarioService";
 import {
     Tarea,
     Proyecto,
@@ -10,6 +11,8 @@ import {
     Prioridad,
     TareaCreateRequest,
     ProyectoCreateRequest,
+    UsuarioResumido,
+    Comentario,
 } from "../types/types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -48,16 +51,119 @@ function formatDate(d?: string) {
     return new Date(d).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+function nowMin() {
+    const now = new Date();
+    now.setSeconds(0, 0);
+    return now.toISOString().slice(0, 16);
+}
+
 function closeBsModal(id: string) {
     (document.getElementById(id) as HTMLButtonElement | null)?.click();
 }
 
+// ─── ComentariosOffcanvas ─────────────────────────────────────────────────────
+
+function ComentariosOffcanvas({ tarea, onClose }: { tarea: Tarea | null; onClose: () => void }) {
+    const { user } = useAuth();
+    const [comentarios, setComentarios] = useState<Comentario[]>([]);
+    const [texto, setTexto] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [sending, setSending] = useState(false);
+    const endRef = useRef<HTMLDivElement>(null);
+
+    const cargar = useCallback(async () => {
+        if (!tarea) return;
+        setLoading(true);
+        try {
+            const res = await comentarioService.listarPorTarea(tarea.id);
+            setComentarios(res.data);
+        } catch { /* ignore */ }
+        finally { setLoading(false); }
+    }, [tarea]);
+
+    useEffect(() => { cargar(); setTexto(""); }, [cargar]);
+    useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [comentarios]);
+
+    const enviar = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!texto.trim() || !tarea) return;
+        setSending(true);
+        try {
+            await comentarioService.crear({ tareaId: tarea.id, contenido: texto.trim() });
+            setTexto("");
+            await cargar();
+        } catch { /* ignore */ }
+        finally { setSending(false); }
+    };
+
+    const eliminar = async (id: number) => {
+        try { await comentarioService.eliminar(id); await cargar(); }
+        catch { /* ignore */ }
+    };
+
+    const formatTs = (d: string) =>
+        new Date(d).toLocaleString("es-ES", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+    return (
+        <div
+            className={`offcanvas offcanvas-end${tarea ? " show" : ""}`}
+            style={{ width: 380, visibility: tarea ? "visible" : "hidden" }}
+            tabIndex={-1}
+        >
+            <div className="offcanvas-header" style={{ background: "var(--deep-space-blue)" }}>
+                <div>
+                    <h6 className="offcanvas-title text-white mb-0">Comentarios</h6>
+                    {tarea && <small className="text-white-50">{tarea.titulo}</small>}
+                </div>
+                <button type="button" className="btn-close btn-close-white" onClick={onClose} />
+            </div>
+            <div className="offcanvas-body d-flex flex-column p-0">
+                <div className="flex-grow-1 overflow-auto p-3">
+                    {loading && <div className="text-center text-muted py-4"><div className="spinner-border spinner-border-sm" /></div>}
+                    {!loading && comentarios.length === 0 && (
+                        <p className="text-muted text-center small mt-4">Sin comentarios todavía. ¡Sé el primero!</p>
+                    )}
+                    {comentarios.map(c => (
+                        <div key={c.id} className="card mb-2 border-0 shadow-sm">
+                            <div className="card-body py-2 px-3">
+                                <div className="d-flex justify-content-between align-items-start">
+                                    <span className="fw-semibold small">{c.autorNombre}</span>
+                                    {c.autorId === user?.usuarioId && (
+                                        <button className="btn btn-link btn-sm p-0 text-danger ms-2" title="Eliminar" onClick={() => eliminar(c.id)}>
+                                            <i className="bi bi-trash" />
+                                        </button>
+                                    )}
+                                </div>
+                                <p className="mb-1 small">{c.contenido}</p>
+                                <small className="text-muted">{formatTs(c.fechaCreacion)}</small>
+                            </div>
+                        </div>
+                    ))}
+                    <div ref={endRef} />
+                </div>
+                <form onSubmit={enviar} className="border-top p-3 d-flex gap-2">
+                    <input
+                        className="form-control form-control-sm"
+                        placeholder="Escribe un comentario…"
+                        value={texto}
+                        onChange={e => setTexto(e.target.value)}
+                        maxLength={500}
+                        disabled={sending}
+                    />
+                    <button type="submit" className="btn btn-primary btn-sm" disabled={sending || !texto.trim()}>
+                        {sending ? <span className="spinner-border spinner-border-sm" /> : "Enviar"} <i className="bi bi-send" />
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+}
+
 // ─── TareaRow ─────────────────────────────────────────────────────────────────
 
-function TareaRow({ tarea, onRefresh }: { tarea: Tarea; onRefresh: () => void }) {
+function TareaRow({ tarea, onRefresh, onVerComentarios }: { tarea: Tarea; onRefresh: () => void; onVerComentarios: (t: Tarea) => void }) {
     const { user } = useAuth();
-    const puedeRevisar = user?.rol === "ADMIN" || user?.rol === "LIDER" || user?.rol === "REVISOR";
-    const esAsignado   = tarea.usuarioAsignado?.id === user?.usuarioId;
+    const esAsignado = tarea.usuarioAsignado?.id === user?.usuarioId;
 
     const cambiarEstado = async (accion: "ACEPTAR" | "RECHAZAR") => {
         try { await tareaService.cambiarEstado(tarea.id, { accion }); onRefresh(); }
@@ -66,11 +172,6 @@ function TareaRow({ tarea, onRefresh }: { tarea: Tarea; onRefresh: () => void })
 
     const mover = async (estadoDestino: EstadoTarea) => {
         try { await tareaService.moverEstado(tarea.id, { estadoDestino }); onRefresh(); }
-        catch (e: any) { alert(e.message); }
-    };
-
-    const decidir = async (aprobado: boolean) => {
-        try { await tareaService.decidirRevision(tarea.id, { aprobado }); onRefresh(); }
         catch (e: any) { alert(e.message); }
     };
 
@@ -89,14 +190,17 @@ function TareaRow({ tarea, onRefresh }: { tarea: Tarea; onRefresh: () => void })
                         <button className="btn btn-sm btn-outline-danger" onClick={() => cambiarEstado("RECHAZAR")}>Rechazar</button>
                     </>)}
                     {esAsignado && tarea.estado === "EN_PROCESO" && (
-                        <button className="btn btn-sm btn-primary" onClick={() => mover(tarea.requiereRevision ? "EN_REVISION" : "COMPLETADA")}>
-                            {tarea.requiereRevision ? "Enviar a revisión" : "Completar"}
+                        <button className="btn btn-sm btn-primary" onClick={() => mover("COMPLETADA")}>
+                            Completar
                         </button>
                     )}
-                    {puedeRevisar && tarea.estado === "EN_REVISION" && (<>
-                        <button className="btn btn-sm btn-success" onClick={() => decidir(true)}>Aprobar</button>
-                        <button className="btn btn-sm btn-outline-danger" onClick={() => decidir(false)}>Rechazar</button>
-                    </>)}
+                    <button
+                        className="btn btn-sm btn-outline-secondary"
+                        title="Ver comentarios"
+                        onClick={() => onVerComentarios(tarea)}
+                    >
+                        💬{tarea.totalComentarios > 0 && <span className="ms-1 badge bg-secondary">{tarea.totalComentarios}</span>}
+                    </button>
                 </div>
             </td>
         </tr>
@@ -105,7 +209,7 @@ function TareaRow({ tarea, onRefresh }: { tarea: Tarea; onRefresh: () => void })
 
 // ─── TareasTable ──────────────────────────────────────────────────────────────
 
-function TareasTable({ tareas, onRefresh }: { tareas: Tarea[]; onRefresh: () => void }) {
+function TareasTable({ tareas, onRefresh, onVerComentarios }: { tareas: Tarea[]; onRefresh: () => void; onVerComentarios: (t: Tarea) => void }) {
     if (tareas.length === 0) return <p className="text-muted">No hay tareas para mostrar.</p>;
     return (
         <div className="table-responsive">
@@ -117,7 +221,7 @@ function TareasTable({ tareas, onRefresh }: { tareas: Tarea[]; onRefresh: () => 
                     </tr>
                 </thead>
                 <tbody>
-                    {tareas.map(t => <TareaRow key={t.id} tarea={t} onRefresh={onRefresh} />)}
+                    {tareas.map(t => <TareaRow key={t.id} tarea={t} onRefresh={onRefresh} onVerComentarios={onVerComentarios} />)}
                 </tbody>
             </table>
         </div>
@@ -127,17 +231,29 @@ function TareasTable({ tareas, onRefresh }: { tareas: Tarea[]; onRefresh: () => 
 // ─── CreateTareaModal ─────────────────────────────────────────────────────────
 
 function CreateTareaModal({ proyectos, onCreated }: { proyectos: Proyecto[]; onCreated: () => void }) {
-    const [form, setForm] = useState<Partial<TareaCreateRequest>>({ prioridad: "MEDIA", requiereRevision: false });
+    const [form, setForm] = useState<Partial<TareaCreateRequest>>({ prioridad: "MEDIA" });
     const [error, setError]   = useState("");
     const [loading, setLoading] = useState(false);
+    const [miembros, setMiembros] = useState<UsuarioResumido[]>([]);
+
+    const handleProyectoChange = async (proyectoId: number) => {
+        setForm(f => ({ ...f, proyectoId, usuarioAsignadoId: undefined }));
+        setMiembros([]);
+        if (!proyectoId) return;
+        try {
+            const res = await proyectoService.getMiembros(proyectoId);
+            setMiembros(res.data);
+        } catch { /* ignore */ }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.proyectoId || !form.titulo?.trim()) { setError("Proyecto y título son obligatorios"); return; }
+        if (!form.usuarioAsignadoId) { setError("Debes asignar la tarea a un miembro del equipo"); return; }
         setLoading(true);
         try {
             await tareaService.crear(form as TareaCreateRequest);
-            setForm({ prioridad: "MEDIA", requiereRevision: false });
+            setForm({ prioridad: "MEDIA" });
             setError("");
             onCreated();
             closeBsModal("closeTareaModal");
@@ -158,9 +274,21 @@ function CreateTareaModal({ proyectos, onCreated }: { proyectos: Proyecto[]; onC
                             {error && <div className="alert alert-danger py-2">{error}</div>}
                             <div className="mb-3">
                                 <label className="form-label">Proyecto *</label>
-                                <select className="form-select" value={form.proyectoId ?? ""} onChange={e => setForm({ ...form, proyectoId: Number(e.target.value) })}>
+                                <select className="form-select" value={form.proyectoId ?? ""} onChange={e => handleProyectoChange(Number(e.target.value))}>
                                     <option value="">Selecciona un proyecto</option>
                                     {proyectos.map(p => <option key={p.id} value={p.id}>{p.titulo}</option>)}
+                                </select>
+                            </div>
+                            <div className="mb-3">
+                                <label className="form-label">Asignar a</label>
+                                <select
+                                    className="form-select"
+                                    value={form.usuarioAsignadoId ?? ""}
+                                    onChange={e => setForm({ ...form, usuarioAsignadoId: e.target.value ? Number(e.target.value) : undefined })}
+                                    disabled={miembros.length === 0}
+                                >
+                                    <option value="">{form.proyectoId ? (miembros.length === 0 ? "Cargando…" : "Sin asignar") : "Selecciona un proyecto primero"}</option>
+                                    {miembros.map(m => <option key={m.id} value={m.id}>{m.nombreCompleto} — {m.email}</option>)}
                                 </select>
                             </div>
                             <div className="mb-3">
@@ -183,12 +311,8 @@ function CreateTareaModal({ proyectos, onCreated }: { proyectos: Proyecto[]; onC
                                 </div>
                                 <div className="col">
                                     <label className="form-label">Fecha límite</label>
-                                    <input type="datetime-local" className="form-control" value={form.fechaLimite ?? ""} onChange={e => setForm({ ...form, fechaLimite: e.target.value })} />
+                                    <input type="datetime-local" className="form-control" min={nowMin()} value={form.fechaLimite ?? ""} onChange={e => setForm({ ...form, fechaLimite: e.target.value })} />
                                 </div>
-                            </div>
-                            <div className="form-check">
-                                <input type="checkbox" className="form-check-input" id="chkRevision" checked={form.requiereRevision ?? false} onChange={e => setForm({ ...form, requiereRevision: e.target.checked })} />
-                                <label className="form-check-label" htmlFor="chkRevision">Requiere revisión</label>
                             </div>
                         </div>
                         <div className="modal-footer">
@@ -244,7 +368,7 @@ function CreateProyectoModal({ onCreated }: { onCreated: () => void }) {
                             </div>
                             <div className="mb-3">
                                 <label className="form-label">Fecha fin estimada</label>
-                                <input type="datetime-local" className="form-control" value={form.fechaFinEstimada ?? ""} onChange={e => setForm({ ...form, fechaFinEstimada: e.target.value })} />
+                                <input type="datetime-local" className="form-control" min={nowMin()} value={form.fechaFinEstimada ?? ""} onChange={e => setForm({ ...form, fechaFinEstimada: e.target.value })} />
                             </div>
                         </div>
                         <div className="modal-footer">
@@ -260,7 +384,7 @@ function CreateProyectoModal({ onCreated }: { onCreated: () => void }) {
 
 // ─── MainPage ─────────────────────────────────────────────────────────────────
 
-type Section = "dashboard" | "mis-tareas" | "todas" | "proyectos" | "revision";
+type Section = "dashboard" | "mis-tareas" | "todas" | "proyectos";
 
 export default function MainPage() {
     const { user } = useAuth();
@@ -268,13 +392,12 @@ export default function MainPage() {
     const [tareas, setTareas]     = useState<Tarea[]>([]);
     const [misTareas, setMisTareas] = useState<Tarea[]>([]);
     const [proyectos, setProyectos] = useState<Proyecto[]>([]);
-    const [revision, setRevision] = useState<Tarea[]>([]);
     const [stats, setStats]       = useState<Partial<Record<EstadoTarea, number>>>({});
     const [loading, setLoading]   = useState(false);
     const [error, setError]       = useState("");
+    const [tareaSeleccionada, setTareaSeleccionada] = useState<Tarea | null>(null);
 
-    const puedeRevisar     = user?.rol === "ADMIN" || user?.rol === "LIDER" || user?.rol === "REVISOR";
-    const puedeCrearProy   = user?.rol === "ADMIN" || user?.rol === "LIDER";
+    const puedeCrearProy = user?.rol === "ADMIN" || user?.rol === "LIDER";
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -292,25 +415,20 @@ export default function MainPage() {
             const s: Partial<Record<EstadoTarea, number>> = {};
             tareasRes.data.forEach(t => { s[t.estado] = (s[t.estado] ?? 0) + 1; });
             setStats(s);
-
-            if (puedeRevisar) {
-                const revRes = await tareaService.pendientesRevision();
-                setRevision(revRes.data);
-            }
         } catch (e: any) {
             setError(e.message ?? "Error al cargar datos");
         } finally {
             setLoading(false);
         }
-    }, [puedeRevisar]);
+    }, []);
 
     useEffect(() => { loadData(); }, [loadData]);
 
     const statCards: { label: string; estado: EstadoTarea; icon: string; color: string }[] = [
         { label: "Pendientes",   estado: "PENDIENTE",   icon: "⏳", color: "secondary" },
         { label: "En proceso",   estado: "EN_PROCESO",  icon: "🔨", color: "info"      },
-        { label: "En revisión",  estado: "EN_REVISION", icon: "🔍", color: "warning"   },
-        { label: "Completadas",  estado: "COMPLETADA",  icon: "✅", color: "success"   },
+        { label: "Rechazadas",   estado: "RECHAZADA",   icon: "⛔", color: "danger"    },
+        { label: "Completadas",  estado: "COMPLETADA",  icon: "✅", color: "success"   }
     ];
 
     return (
@@ -318,7 +436,7 @@ export default function MainPage() {
             <div className="d-flex" style={{ minHeight: "calc(100vh - 116px)" }}>
 
                 {/* ── Sidebar ── */}
-                <nav className="d-flex flex-column p-3 border-end flex-shrink-0"
+                <nav className="d-flex flex-column p-3 border-end border-top flex-shrink-0"
                     style={{ width: 220, background: "var(--deep-space-blue)" }}>
 
                     <p className="text-white-50 small fw-bold text-uppercase mb-2 mt-1 ps-1">Navegación</p>
@@ -338,13 +456,6 @@ export default function MainPage() {
                         );
                     })}
 
-                    {puedeRevisar && (
-                        <button onClick={() => setSection("revision")}
-                            className={`btn btn-sm text-start mb-1 ${section === "revision" ? "btn-light fw-semibold" : "btn-outline-light"}`}>
-                            🔍 Revisión{" "}
-                            {revision.length > 0 && <span className="badge bg-warning text-dark ms-1">{revision.length}</span>}
-                        </button>
-                    )}
 
                     <hr className="border-secondary my-2" />
 
@@ -446,7 +557,7 @@ export default function MainPage() {
                             <h4 className="mb-4 fw-bold">
                                 Mis tareas <span className="badge bg-secondary fs-6">{misTareas.length}</span>
                             </h4>
-                            <TareasTable tareas={misTareas} onRefresh={loadData} />
+                            <TareasTable tareas={misTareas} onRefresh={loadData} onVerComentarios={setTareaSeleccionada} />
                         </>
                     )}
 
@@ -456,7 +567,7 @@ export default function MainPage() {
                             <h4 className="mb-4 fw-bold">
                                 Todas las tareas <span className="badge bg-secondary fs-6">{tareas.length}</span>
                             </h4>
-                            <TareasTable tareas={tareas} onRefresh={loadData} />
+                            <TareasTable tareas={tareas} onRefresh={loadData} onVerComentarios={setTareaSeleccionada} />
                         </>
                     )}
 
@@ -497,26 +608,18 @@ export default function MainPage() {
                             )}
                         </>
                     )}
-
-                    {/* Revisión */}
-                    {!loading && section === "revision" && puedeRevisar && (
-                        <>
-                            <h4 className="mb-4 fw-bold">
-                                Pendientes de revisión{" "}
-                                <span className="badge bg-warning text-dark fs-6">{revision.length}</span>
-                            </h4>
-                            {revision.length === 0
-                                ? <div className="alert alert-success">No hay tareas pendientes de revisión.</div>
-                                : <TareasTable tareas={revision} onRefresh={loadData} />
-                            }
-                        </>
-                    )}
                 </main>
             </div>
 
             {/* Modals */}
             <CreateTareaModal proyectos={proyectos} onCreated={loadData} />
             {puedeCrearProy && <CreateProyectoModal onCreated={loadData} />}
+
+            {/* Offcanvas backdrop */}
+            {tareaSeleccionada && (
+                <div className="offcanvas-backdrop fade show" onClick={() => setTareaSeleccionada(null)} />
+            )}
+            <ComentariosOffcanvas tarea={tareaSeleccionada} onClose={() => setTareaSeleccionada(null)} />
         </DefaultLayout>
     );
 }

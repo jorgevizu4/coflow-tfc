@@ -15,8 +15,12 @@ export const authService = {
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || "Error en el inicio de sesión");
+            try {
+                const error = await response.json();
+                throw new Error(error.message || "Credenciales incorrectas");
+            } catch {
+                throw new Error("Credenciales incorrectas");
+            }
         }
 
         const data: ApiResponse<LoginResponse> = await response.json();
@@ -24,32 +28,30 @@ export const authService = {
     },
 
     async signup(
-        nombreEmpresa: string,
-        nombreAdministrador: string,
-        emailAdministrador: string,
-        passwordAdministrador: string,
+        empresaId: number,
+        nombre: string,
+        apellidos: string,
+        email: string,
+        password: string,
         passwordRepeat: string
     ): Promise<LoginResponse> {
-        if (passwordAdministrador !== passwordRepeat) {
+        if (password !== passwordRepeat) {
             throw new Error("Las contraseñas no coinciden");
         }
 
-        const response = await fetch(`${API_BASE_URL}/auth/register-company`, {
+        const response = await fetch(`${API_BASE_URL}/auth/register`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                nombreEmpresa,
-                nombreAdministrador,
-                emailAdministrador,
-                passwordAdministrador,
-            }),
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ empresaId, nombre, apellidos, email, password }),
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || "Error en el registro");
+            try {
+                const error = await response.json();
+                throw new Error(error.message || "Error en el registro");
+            } catch {
+                throw new Error("Error en el registro");
+            }
         }
 
         const data: ApiResponse<LoginResponse> = await response.json();
@@ -57,24 +59,26 @@ export const authService = {
     },
 
     getStoredToken(): string | null {
-        return localStorage.getItem("token");
+        return sessionStorage.getItem("token");
     },
 
     saveToken(token: string) {
-        localStorage.setItem("token", token);
+        sessionStorage.setItem("token", token);
     },
 
     clearToken() {
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("user");
         localStorage.removeItem("token");
         localStorage.removeItem("user");
     },
 
     saveUser(user: LoginResponse) {
-        localStorage.setItem("user", JSON.stringify(user));
+        sessionStorage.setItem("user", JSON.stringify(user));
     },
 
     getSavedUser(): LoginResponse | null {
-        const user = localStorage.getItem("user");
+        const user = sessionStorage.getItem("user");
         return user ? JSON.parse(user) : null;
     },
 };
