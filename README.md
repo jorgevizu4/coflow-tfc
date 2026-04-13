@@ -57,7 +57,7 @@ CREATE DATABASE coflow;
 
 #### 2. Arrancar el backend
 ```bash
-cd backend-v2
+cd backend
 mvn spring-boot:run
 ```
 La API queda disponible en [http://localhost:8081](http://localhost:8081).
@@ -87,7 +87,7 @@ Escanea el QR con la app **Expo Go** en tu dispositivo, o presiona `a` para Andr
 
 ```
 coflow-tfc/
-├── backend-v2/              # API REST (Spring Boot + MySQL)
+├── backend/                 # API REST (Spring Boot + MySQL)
 │   ├── src/main/java/       # Código fuente
 │   ├── src/main/resources/  # application.properties
 │   └── pom.xml
