@@ -2,8 +2,9 @@
 
 Gestor de proyectos colaborativo multi-tenant desarrollado como TFG.
 
-- **Backend:** Spring Boot 3.2 · Java 17 · PostgreSQL · JWT
-- **Frontend:** React 18 · Vite · TypeScript · Bootstrap 5
+- **Backend:** Spring Boot 3.2 · Java 17 · MySQL 8 · JWT
+- **Frontend Web:** React 18 · Vite · TypeScript · Bootstrap 5
+- **Mobile:** React Native · Expo · TypeScript
 
 ---
 
@@ -14,7 +15,9 @@ Gestor de proyectos colaborativo multi-tenant desarrollado como TFG.
 | Java JDK | 17 | https://adoptium.net |
 | Maven | 3.9 | https://maven.apache.org/download.cgi |
 | Node.js | 20 | https://nodejs.org |
-| PostgreSQL | 15 | https://www.postgresql.org/download |
+| MySQL | 8.0 | https://dev.mysql.com/downloads |
+| Expo CLI | latest | `npm install -g expo-cli` |
+| Expo Go (opcional) | latest | App Store / Google Play |
 
 ---
 
@@ -36,8 +39,8 @@ Si tienes **Docker** y **Docker Compose** instalados, puedes levantar todo el en
    ```
 
 *   **Frontend:** [http://localhost:5173](http://localhost:5173)
-*   **Backend API:** [http://localhost:8080/api/v1](http://localhost:8080/api/v1)
-*   **Base de Datos:** `localhost:5433` (externo) / `db:5432` (interno)
+*   **Backend API:** [http://localhost:8081](http://localhost:8081)
+*   **Base de Datos:** `localhost:3307` (externo) / `db-v2:3306` (interno)
 
 ---
 
@@ -46,21 +49,20 @@ Si tienes **Docker** y **Docker Compose** instalados, puedes levantar todo el en
 Si prefieres ejecutar los servicios de forma nativa en tu máquina:
 
 #### 1. Preparar la base de datos
-Conéctate a PostgreSQL como superusuario y ejecuta:
+Conéctate a MySQL como root y ejecuta:
 ```sql
-CREATE USER taskmanager WITH PASSWORD 'taskmanager123';
-CREATE DATABASE taskmanager OWNER taskmanager;
+CREATE DATABASE coflow;
 ```
-> El backend espera PostgreSQL en el **puerto 5433**.
+> El backend espera MySQL en el **puerto 3306**.
 
 #### 2. Arrancar el backend
 ```bash
-cd backend
+cd backend-v2
 mvn spring-boot:run
 ```
-La API queda disponible en [http://localhost:8080/api/v1](http://localhost:8080/api/v1).
+La API queda disponible en [http://localhost:8081](http://localhost:8081).
 
-#### 3. Arrancar el frontend
+#### 3. Arrancar el frontend web
 Abre **una terminal nueva** y ejecuta:
 ```bash
 cd frontend-web
@@ -69,18 +71,38 @@ npm run dev
 ```
 La aplicación queda disponible en [http://localhost:5173](http://localhost:5173).
 
+#### 4. Arrancar la app móvil
+Abre **otra terminal nueva** y ejecuta:
+```bash
+cd coflow-mobile
+npm install
+npm start
+
+```
+Escanea el QR con la app **Expo Go** en tu dispositivo, o presiona `a` para Android o `i` para iOS (requiere emulador).
+
 ---
 
 ## Estructura del proyecto
 
 ```
 coflow-tfc/
-├── backend/                 # API REST (Spring Boot)
+├── backend-v2/              # API REST (Spring Boot + MySQL)
 │   ├── src/main/java/       # Código fuente
-│   ├── src/main/resources/  # application.yml
+│   ├── src/main/resources/  # application.properties
 │   └── pom.xml
-└── frontend-web/            # SPA React + Vite
+├── frontend-web/            # SPA React + Vite
+│   ├── src/
+│   └── package.json
+└── coflow-mobile/           # App móvil React Native + Expo
     ├── src/
+    │   ├── auth/            # Contexto de autenticación
+    │   ├── components/      # Componentes reutilizables
+    │   ├── navigation/      # Navegación (React Navigation)
+    │   ├── screens/         # Pantallas de la app
+    │   ├── services/        # Llamadas a la API
+    │   └── types/           # Tipos TypeScript
+    ├── App.tsx
     └── package.json
 ```
 
@@ -92,14 +114,16 @@ El backend admite sobrescribir la configuración con variables de entorno. Las m
 
 | Variable | Por defecto (dev) | Descripción |
 |---|---|---|
-| `JWT_SECRET` | valor largo embebido en `application.yml` | Clave secreta HMAC-SHA256 para firmar tokens |
-| `CORS_ALLOWED_ORIGINS` | `http://localhost:3000,http://localhost:3001,http://localhost:5173` | Orígenes permitidos por CORS |
+| `JWT_SECRET_KEY` | valor hex embebido en `application.properties` | Clave secreta HMAC-SHA256 para firmar tokens |
+| `SPRING_DATASOURCE_URL` | `jdbc:mysql://localhost:3306/coflow` | URL de conexión a MySQL |
 
-Para el frontend, crea el archivo `frontend-web/.env.local` si necesitas apuntar a un backend distinto al local:
+Para el frontend web, crea el archivo `frontend-web/.env.local` si necesitas apuntar a un backend distinto al local:
 
 ```env
 VITE_API_BASE_URL=http://localhost:8080/api/v1
 ```
+
+Para la app móvil, edita `coflow-mobile/src/services/apiClient.ts` y ajusta la `BASE_URL` si el backend no está en la IP/puerto por defecto.
 
 ---
 
@@ -113,13 +137,21 @@ VITE_API_BASE_URL=http://localhost:8080/api/v1
 | `mvn package -DskipTests` | Genera el JAR en `target/` |
 | `mvn test` | Ejecuta los tests (requiere la BD levantada) |
 
-### Frontend
+### Frontend Web
 
 | Comando | Descripción |
 |---|---|
 | `npm run dev` | Servidor de desarrollo con HMR |
 | `npm run build` | Compilación de producción en `dist/` |
 | `npm run preview` | Vista previa del build de producción |
+
+### App Móvil
+
+| Comando | Descripción |
+|---|---|
+| `npm start` | Inicia el servidor Expo (Metro Bundler) |
+| `npm run android` | Abre directamente en emulador/dispositivo Android |
+| `npm run ios` | Abre directamente en simulador/dispositivo iOS |
 
 ---
 
