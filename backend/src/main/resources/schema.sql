@@ -112,3 +112,9 @@ CREATE TABLE proyecto_usuario (
 ) ENGINE=InnoDB;
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+INSERT INTO empresa (nombre, fecha_creacion)
+VALUES 
+('TechNova Solutions', '2024-01-15'),
+('Alimentos del Norte S.L.', '2023-06-10'),
+('InnovaSoft S.A.', '2022-09-01');
