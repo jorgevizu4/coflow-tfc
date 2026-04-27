@@ -122,6 +122,6 @@ exec /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
 EOF
 RUN chmod +x /entrypoint.sh
 
-EXPOSE 80 8080
+EXPOSE 80
 
 ENTRYPOINT ["/entrypoint.sh"]
