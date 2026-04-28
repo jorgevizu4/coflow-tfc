@@ -33,7 +33,8 @@ export const authService = {
         apellidos: string,
         email: string,
         password: string,
-        passwordRepeat: string
+        passwordRepeat: string,
+        rol: string
     ): Promise<LoginResponse> {
         if (password !== passwordRepeat) {
             throw new Error("Las contraseñas no coinciden");
@@ -42,7 +43,7 @@ export const authService = {
         const response = await fetch(`${API_BASE_URL}/auth/register`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ empresaId, nombre, apellidos, email, password }),
+            body: JSON.stringify({ empresaId, nombre, apellidos, email, password, rol }),
         });
 
         if (!response.ok) {

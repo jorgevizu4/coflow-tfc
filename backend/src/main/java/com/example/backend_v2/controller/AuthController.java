@@ -104,7 +104,11 @@ public class AuthController {
         usuario.setApellidos(request.getApellidos());
         usuario.setEmail(request.getEmail());
         usuario.setPassword(passwordEncoder.encode(request.getPassword()));
-        usuario.setRol(RolUsuario.USUARIO);
+        RolUsuario rol = RolUsuario.USUARIO;
+        if (request.getRol() != null) {
+            try { rol = RolUsuario.valueOf(request.getRol()); } catch (IllegalArgumentException ignored) {}
+        }
+        usuario.setRol(rol);
         usuario.setFechaCreacion(LocalDate.now());
         usuario.setEmpresa(empresa);
         usuarioRepository.save(usuario);

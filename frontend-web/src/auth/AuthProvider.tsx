@@ -14,7 +14,8 @@ interface AuthContextType {
         apellidos: string,
         email: string,
         password: string,
-        passwordRepeat: string
+        passwordRepeat: string,
+        rol: string
     ) => Promise<void>;
     logout: () => void;
 }
@@ -28,7 +29,7 @@ const AuthContext = createContext<AuthContextType>({
     user: null,
     token: null,
     login: async () => {},
-    signup: async (_eid: number, _n: string, _a: string, _e: string, _p: string, _pr: string) => {},
+    signup: async (_eid: number, _n: string, _a: string, _e: string, _p: string, _pr: string, _r: string) => {},
     logout: () => {},
 });
 
@@ -68,7 +69,8 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         apellidos: string,
         email: string,
         password: string,
-        passwordRepeat: string
+        passwordRepeat: string,
+        rol: string
     ) => {
         if (password !== passwordRepeat) {
             throw new Error("Las contraseñas no coinciden");
@@ -80,7 +82,8 @@ export default function AuthProvider({ children }: AuthProviderProps) {
                 apellidos,
                 email,
                 password,
-                passwordRepeat
+                passwordRepeat,
+                rol
             );
             authService.saveToken(response.token);
             authService.saveUser(response);

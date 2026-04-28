@@ -12,7 +12,8 @@ export default function Signup() {
         apellidos: "",
         email: "",
         password: "",
-        passwordRepeat: ""
+        passwordRepeat: "",
+        rol: "USUARIO"
     });
 
     const [errorResponse, setErrorResponse] = useState("");
@@ -37,7 +38,8 @@ export default function Signup() {
             !input.nombre.trim() ||
             !input.email.trim() ||
             !input.password.trim() ||
-            !input.passwordRepeat.trim()
+            !input.passwordRepeat.trim() ||
+            !input.rol
         ) {
             setErrorResponse("Debes rellenar todos los campos obligatorios.");
             return;
@@ -55,7 +57,8 @@ export default function Signup() {
                 input.apellidos,
                 input.email,
                 input.password,
-                input.passwordRepeat
+                input.passwordRepeat,
+                input.rol
             );
             setErrorResponse("");
             goTo("/main");
@@ -108,6 +111,16 @@ export default function Signup() {
                         <input type="email" className="form-control" id="email" placeholder="tu@email.com"
                             value={input.email}
                             onChange={e => setInput({ ...input, email: e.target.value })} />
+                    </div>
+                    <div className="mb-3">
+                        <label htmlFor="rol" className="form-label">Rol *</label>
+                        <select className="form-select" id="rol" value={input.rol}
+                            onChange={e => setInput({ ...input, rol: e.target.value })}>
+                            <option value="USUARIO">Usuario</option>
+                            <option value="ADMIN">Administrador</option>
+                            <option value="LIDER">Líder</option>
+                            <option value="REVISOR">Revisor</option>
+                        </select>
                     </div>
                     <div className="mb-3">
                         <label htmlFor="password" className="form-label">Contraseña *</label>
