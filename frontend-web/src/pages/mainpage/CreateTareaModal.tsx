@@ -22,7 +22,9 @@ export default function CreateTareaModal({ proyectos, onCreated }: Props) {
         try {
             const res = await proyectoService.getMiembros(proyectoId);
             setMiembros(res.data);
-        } catch { /* ignore */ }
+        } catch (e: any) {
+            setError(e.message ?? "Error al cargar miembros");
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {

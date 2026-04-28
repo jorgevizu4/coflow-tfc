@@ -7,7 +7,8 @@ interface RequestOptions extends RequestInit {
 
 function isTokenExpired(token: string): boolean {
     try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
+        const b64 = token.split(".")[1].replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(atob(b64));
         return Date.now() / 1000 > payload.exp;
     } catch {
         return true;
