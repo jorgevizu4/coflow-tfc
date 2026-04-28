@@ -14,13 +14,15 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # --------- STAGE 2: Runtime ---------
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:17-jdk-jammy
 
 WORKDIR /app
 
+# Copiamos el jar generado
 COPY --from=builder /app/target/*.jar app.jar
 
-
+# Puerto del backend
 EXPOSE 8081
 
+# Ejecutar aplicación
 ENTRYPOINT ["java","-jar","app.jar"]

@@ -25,13 +25,6 @@ RUN mvn clean package -DskipTests -q
 # =============================================================================
 FROM ubuntu:22.04
 
-ARG MYSQL_ROOT_PASSWORD=root
-ARG MYSQL_DATABASE=coflow
-ARG JWT_SECRET_KEY=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-
-ENV MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-ENV MYSQL_DATABASE=${MYSQL_DATABASE}
-ENV JWT_SECRET_KEY=${JWT_SECRET_KEY}
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -68,11 +61,11 @@ stderr_logfile=/var/log/supervisor/mysql.log
 
 [program:backend]
 ; Wait for MySQL to be accepting connections before starting Spring Boot
-command=/bin/bash -c "until mysqladmin -u root -p\"${MYSQL_ROOT_PASSWORD}\" -h 127.0.0.1 ping --silent 2>/dev/null; do sleep 2; done && exec java -jar /app/backend.jar"
+command=/bin/bash -c "until mysqladmin -u root -proot -h 127.0.0.1 ping --silent 2>/dev/null; do sleep 2; done && exec java -jar /app/backend.jar"
 autostart=true
 autorestart=true
 priority=20
-environment=SPRING_DATASOURCE_URL="jdbc:mysql://127.0.0.1:3306/%(ENV_MYSQL_DATABASE)s?useSSL=false&allowPublicKeyRetrieval=true",SPRING_DATASOURCE_USERNAME="root",SPRING_DATASOURCE_PASSWORD="%(ENV_MYSQL_ROOT_PASSWORD)s",JWT_SECRET_KEY="%(ENV_JWT_SECRET_KEY)s"
+environment=SPRING_DATASOURCE_URL="jdbc:mysql://127.0.0.1:3306/coflow?useSSL=false&allowPublicKeyRetrieval=true",SPRING_DATASOURCE_USERNAME="root",SPRING_DATASOURCE_PASSWORD="root",JWT_SECRET_KEY="404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
 stdout_logfile=/var/log/supervisor/backend.log
 stderr_logfile=/var/log/supervisor/backend.log
 
@@ -110,17 +103,17 @@ if [ ! -d /var/lib/mysql/coflow ]; then
     # Set root password and create a TCP-accessible user ('root'@'%')
     # so Spring Boot can connect via 127.0.0.1 (TCP, not socket)
     mysql -u root --socket=/var/run/mysqld/mysqld.sock -e "
-        ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${MYSQL_ROOT_PASSWORD}';
-        CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED WITH mysql_native_password BY '${MYSQL_ROOT_PASSWORD}';
+        ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root';
+        CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'root';
         GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
         FLUSH PRIVILEGES;
-        CREATE DATABASE IF NOT EXISTS \`${MYSQL_DATABASE}\`;
+        CREATE DATABASE IF NOT EXISTS coflow;
     "
 
-    mysql -u root -p"${MYSQL_ROOT_PASSWORD}" --socket=/var/run/mysqld/mysqld.sock "${MYSQL_DATABASE}" \
+    mysql -u root -proot --socket=/var/run/mysqld/mysqld.sock coflow \
         < /docker-entrypoint-initdb.d/coflow.sql
 
-    mysqladmin -u root -p"${MYSQL_ROOT_PASSWORD}" --socket=/var/run/mysqld/mysqld.sock shutdown
+    mysqladmin -u root -proot --socket=/var/run/mysqld/mysqld.sock shutdown
     wait $MYSQLD_PID 2>/dev/null || true
     echo "[init] MySQL initialized."
 fi
